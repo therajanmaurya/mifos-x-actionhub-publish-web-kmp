@@ -1,5 +1,9 @@
 # mifos-x-actionhub-publish-web-kmp
 
+[![Release](https://img.shields.io/github/v/release/therajanmaurya/mifos-x-actionhub-publish-web-kmp?label=release&logo=github)](https://github.com/therajanmaurya/mifos-x-actionhub-publish-web-kmp/releases/latest)
+[![PR Check](https://github.com/therajanmaurya/mifos-x-actionhub-publish-web-kmp/actions/workflows/pr-check.yaml/badge.svg)](https://github.com/therajanmaurya/mifos-x-actionhub-publish-web-kmp/actions/workflows/pr-check.yaml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
+
 > Composite GitHub Actions for KMP **Web** (Kotlin/JS browser distribution): build + deploy to GitHub Pages, Cloudflare Pages, Netlify, or Vercel.
 
 ## What this provides
