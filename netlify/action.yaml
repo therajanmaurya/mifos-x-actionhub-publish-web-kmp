@@ -1,19 +1,39 @@
-# Sub-action: netlify
-# Part of openMF/mifos-x-actionhub-publish-web-kmp@v2.0.0
-#
-# STATUS: Stub — action.yaml + README skeleton placed. Implementation pending
-# (see plan-layer/active/actionhub-constellation-consolidation/PLAN.md Phase P3/P4/P5).
-#
-# Lift source documented in this repo's CHANGELOG.md.
-name: 'mifos-x-actionhub-publish-web-kmp — netlify (TODO)'
-description: 'TODO: replace with real implementation lifted from legacy actionhub repo.'
+# Sub-action: netlify — Deploy via Netlify CLI
+# Lifted from openMF/mifos-x-actionhub-web-publish-kmp@v2.0.0 netlify/
+name: 'KMP Publish Web — Netlify'
+description: 'Deploy built web bundle to Netlify via the Netlify CLI (production deploy).'
 author: 'Mifos Initiative'
+branding: { icon: 'send', color: 'green' }
+
+inputs:
+  dist_dir:           { required: true, description: 'Path to the built web bundle' }
+  netlify_auth_token: { required: true, description: 'Netlify personal access token' }
+  netlify_site_id:    { required: true, description: 'Netlify site ID' }
+
 runs:
   using: 'composite'
   steps:
-    - name: TODO — implement
+    - name: Verify dist dir exists
       shell: bash
+      env: { DIST_DIR: '${{ inputs.dist_dir }}' }
       run: |
-        echo "::error::Sub-action netlify is not yet implemented."
-        echo "See https://github.com/openMF/mifos-x-actionhub-publish-web-kmp/blob/main/CHANGELOG.md for lift source."
-        exit 1
+        if [ ! -d "$DIST_DIR" ]; then
+          echo "ERROR: dist_dir not found: $DIST_DIR" >&2
+          exit 1
+        fi
+
+    - uses: actions/setup-node@v4
+      with: { node-version: '20' }
+
+    - name: Install Netlify CLI
+      shell: bash
+      run: npm install -g netlify-cli@17
+
+    - name: Deploy
+      shell: bash
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ inputs.netlify_auth_token }}
+        NETLIFY_SITE_ID:    ${{ inputs.netlify_site_id }}
+        DIST_DIR:           ${{ inputs.dist_dir }}
+      run: |
+        netlify deploy --dir="$DIST_DIR" --prod --message "Release deploy $GITHUB_SHA"

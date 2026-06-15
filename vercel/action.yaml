@@ -1,19 +1,51 @@
-# Sub-action: vercel
-# Part of openMF/mifos-x-actionhub-publish-web-kmp@v2.0.0
-#
-# STATUS: Stub — action.yaml + README skeleton placed. Implementation pending
-# (see plan-layer/active/actionhub-constellation-consolidation/PLAN.md Phase P3/P4/P5).
-#
-# Lift source documented in this repo's CHANGELOG.md.
-name: 'mifos-x-actionhub-publish-web-kmp — vercel (TODO)'
-description: 'TODO: replace with real implementation lifted from legacy actionhub repo.'
+# Sub-action: vercel — Deploy via Vercel CLI
+# Lifted from openMF/mifos-x-actionhub-web-publish-kmp@v2.0.0 vercel/
+name: 'KMP Publish Web — Vercel'
+description: 'Deploy built web bundle to Vercel via the Vercel CLI (production deploy).'
 author: 'Mifos Initiative'
+branding: { icon: 'send', color: 'black' }
+
+inputs:
+  dist_dir:          { required: true, description: 'Path to the built web bundle' }
+  vercel_token:      { required: true, description: 'Vercel personal access token' }
+  vercel_org_id:     { required: true, description: 'Vercel org / team ID' }
+  vercel_project_id: { required: true, description: 'Vercel project ID' }
+
 runs:
   using: 'composite'
   steps:
-    - name: TODO — implement
+    - name: Verify dist dir exists
       shell: bash
+      env: { DIST_DIR: '${{ inputs.dist_dir }}' }
       run: |
-        echo "::error::Sub-action vercel is not yet implemented."
-        echo "See https://github.com/openMF/mifos-x-actionhub-publish-web-kmp/blob/main/CHANGELOG.md for lift source."
-        exit 1
+        if [ ! -d "$DIST_DIR" ]; then
+          echo "ERROR: dist_dir not found: $DIST_DIR" >&2
+          exit 1
+        fi
+
+    - uses: actions/setup-node@v4
+      with: { node-version: '20' }
+
+    - name: Install Vercel CLI
+      shell: bash
+      run: npm install -g vercel@34
+
+    - name: Pull Vercel project config
+      shell: bash
+      env:
+        VERCEL_TOKEN:      ${{ inputs.vercel_token }}
+        VERCEL_ORG_ID:     ${{ inputs.vercel_org_id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel_project_id }}
+      run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+    - name: Build (pass-through — bundle already built upstream)
+      shell: bash
+      env: { VERCEL_TOKEN: '${{ inputs.vercel_token }}' }
+      run: vercel build --prod --token="$VERCEL_TOKEN"
+
+    - name: Deploy
+      shell: bash
+      env:
+        VERCEL_TOKEN: ${{ inputs.vercel_token }}
+        DIST_DIR:     ${{ inputs.dist_dir }}
+      run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" --yes

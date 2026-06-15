@@ -1,19 +1,46 @@
-# Sub-action: gh-pages
+# Sub-action: gh-pages — Deploy to GitHub Pages branch
 # Part of openMF/mifos-x-actionhub-publish-web-kmp@v2.0.0
 #
-# STATUS: Stub — action.yaml + README skeleton placed. Implementation pending
-# (see plan-layer/active/actionhub-constellation-consolidation/PLAN.md Phase P3/P4/P5).
-#
-# Lift source documented in this repo's CHANGELOG.md.
-name: 'mifos-x-actionhub-publish-web-kmp — gh-pages (TODO)'
-description: 'TODO: replace with real implementation lifted from legacy actionhub repo.'
+# Routes to gh-pages-preview / gh-pages-staging / gh-pages based on `target_stage`.
+# Lifted from openMF/mifos-x-actionhub-web-publish-kmp@v2.0.0 root action +
+# kmp-project-template/.github/workflows/release-web.yml.
+name: 'KMP Publish Web — GitHub Pages'
+description: 'Deploy Kotlin/JS distribution to gh-pages branch (preview/staging/production).'
 author: 'Mifos Initiative'
+branding: { icon: 'send', color: 'gray' }
+
+inputs:
+  web_package_name: { required: true, description: 'Web module name' }
+  target_stage:     { required: false, default: 'production', description: 'preview | staging | production' }
+  java-version:     { required: false, default: '17', description: 'JDK version' }
+
 runs:
   using: 'composite'
   steps:
-    - name: TODO — implement
+    - uses: actions/setup-java@v4
+      with: { distribution: zulu, java-version: '${{ inputs.java-version }}' }
+
+    - name: Build distribution
       shell: bash
+      env: { PKG: '${{ inputs.web_package_name }}' }
+      run: ./gradlew ":$PKG:jsBrowserDistribution"
+
+    - name: Resolve target branch
+      id: branch
+      shell: bash
+      env: { TARGET_STAGE: '${{ inputs.target_stage }}' }
       run: |
-        echo "::error::Sub-action gh-pages is not yet implemented."
-        echo "See https://github.com/openMF/mifos-x-actionhub-publish-web-kmp/blob/main/CHANGELOG.md for lift source."
-        exit 1
+        case "$TARGET_STAGE" in
+          preview)    echo "name=gh-pages-preview" >> "$GITHUB_OUTPUT" ;;
+          staging)    echo "name=gh-pages-staging" >> "$GITHUB_OUTPUT" ;;
+          production) echo "name=gh-pages"         >> "$GITHUB_OUTPUT" ;;
+          *) echo "::error::Invalid target_stage: $TARGET_STAGE"; exit 2 ;;
+        esac
+
+    - name: Deploy to gh-pages branch
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token:    ${{ github.token }}
+        publish_dir:     ${{ inputs.web_package_name }}/build/dist/js/productionExecutable
+        publish_branch:  ${{ steps.branch.outputs.name }}
+        force_orphan:    ${{ inputs.target_stage == 'production' }}

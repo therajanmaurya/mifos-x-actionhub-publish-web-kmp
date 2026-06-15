@@ -1,19 +1,33 @@
-# Sub-action: cloudflare-pages
-# Part of openMF/mifos-x-actionhub-publish-web-kmp@v2.0.0
-#
-# STATUS: Stub — action.yaml + README skeleton placed. Implementation pending
-# (see plan-layer/active/actionhub-constellation-consolidation/PLAN.md Phase P3/P4/P5).
-#
-# Lift source documented in this repo's CHANGELOG.md.
-name: 'mifos-x-actionhub-publish-web-kmp — cloudflare-pages (TODO)'
-description: 'TODO: replace with real implementation lifted from legacy actionhub repo.'
+# Sub-action: cloudflare-pages — Deploy via Wrangler
+# Lifted from openMF/mifos-x-actionhub-web-publish-kmp@v2.0.0 cloudflare-pages/
+name: 'KMP Publish Web — Cloudflare Pages'
+description: 'Deploy built web bundle to Cloudflare Pages via Wrangler.'
 author: 'Mifos Initiative'
+branding: { icon: 'cloud', color: 'orange' }
+
+inputs:
+  dist_dir:                   { required: true,  description: 'Path to the built web bundle' }
+  cloudflare_pages_api_token: { required: true,  description: 'Cloudflare API token with Pages:Edit' }
+  cloudflare_account_id:      { required: true,  description: 'Cloudflare account ID' }
+  project_name:               { required: true,  description: 'Cloudflare Pages project name' }
+  branch:                     { required: false, default: 'main', description: 'Deployment branch label' }
+
 runs:
   using: 'composite'
   steps:
-    - name: TODO — implement
+    - name: Verify dist dir exists
       shell: bash
+      env: { DIST_DIR: '${{ inputs.dist_dir }}' }
       run: |
-        echo "::error::Sub-action cloudflare-pages is not yet implemented."
-        echo "See https://github.com/openMF/mifos-x-actionhub-publish-web-kmp/blob/main/CHANGELOG.md for lift source."
-        exit 1
+        if [ ! -d "$DIST_DIR" ]; then
+          echo "ERROR: dist_dir not found: $DIST_DIR" >&2
+          exit 1
+        fi
+        echo "Dist dir contents: $(ls -1 "$DIST_DIR" | wc -l) entries."
+
+    - name: Deploy via Wrangler
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken:  ${{ inputs.cloudflare_pages_api_token }}
+        accountId: ${{ inputs.cloudflare_account_id }}
+        command: pages deploy ${{ inputs.dist_dir }} --project-name=${{ inputs.project_name }} --branch=${{ inputs.branch }}
