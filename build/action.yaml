@@ -1,0 +1,42 @@
+# Sub-action: build — Kotlin/JS browser distribution build
+# Part of openMF/mifos-x-actionhub-publish-web-kmp@v2.0.0
+# Lifted from openMF/mifos-x-actionhub-build-web-app-kmp@v1.0.1.
+name: 'KMP Publish Web — Build (Kotlin/JS distribution)'
+description: 'Build Kotlin/JS browser distribution (jsBrowserDistribution).'
+author: 'Mifos Initiative'
+branding: { icon: 'package', color: 'blue' }
+
+inputs:
+  web_package_name: { required: true,  description: 'Web module name (e.g. cmp-web)' }
+  java-version:     { required: false, default: '17', description: 'JDK version' }
+
+outputs:
+  dist_dir:
+    description: 'Path to the built distribution dir'
+    value: ${{ steps.locate.outputs.dist_dir }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-java@v4
+      with: { distribution: zulu, java-version: '${{ inputs.java-version }}' }
+
+    - uses: gradle/actions/setup-gradle@v3
+
+    - name: Build Kotlin/JS distribution
+      shell: bash
+      env: { PKG: '${{ inputs.web_package_name }}' }
+      run: ./gradlew ":$PKG:jsBrowserDistribution"
+
+    - name: Locate dist dir
+      id: locate
+      shell: bash
+      env: { PKG: '${{ inputs.web_package_name }}' }
+      run: |
+        DIST="$PKG/build/dist/js/productionExecutable"
+        [[ -d "$DIST" ]] || { echo "::error::dist not found at $DIST"; exit 1; }
+        echo "dist_dir=$DIST" >> "$GITHUB_OUTPUT"
+        echo "✅ Built $(ls -1 "$DIST" | wc -l) files at $DIST"
+
+    - uses: actions/upload-artifact@v4
+      with: { name: web-dist, path: '${{ steps.locate.outputs.dist_dir }}' }
