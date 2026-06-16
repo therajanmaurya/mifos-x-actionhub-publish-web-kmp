@@ -8,6 +8,7 @@
 #   Stage 2 (staging)     — gh-pages-staging branch (promote = copy preview → staging)
 #   Stage 3 (production)  — gh-pages branch (promote = copy staging → gh-pages)
 name: Release · Web (ladder)
+run-name: "🌐 Release Web ${{ inputs.host }} · ladder→${{ inputs.starting_rung }}"
 
 on:
   workflow_call:
@@ -37,8 +38,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Preflight: validate required secrets per host — fail-fast in ~5s instead of
+  # dying deep in the deploy step. gh-pages needs nothing (uses GITHUB_TOKEN);
+  # cloudflare-pages / netlify / vercel each need exactly one host-specific token.
+  validate-secrets:
+    name: Preflight · Validate required secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check web secrets per host
+        env:
+          cloudflare_api_token: ${{ secrets.cloudflare_api_token }}
+          netlify_auth_token:   ${{ secrets.netlify_auth_token }}
+          vercel_token:         ${{ secrets.vercel_token }}
+        run: |
+          MISSING=()
+          case "${{ inputs.host }}" in
+            gh-pages)
+              echo "✅ gh-pages uses GITHUB_TOKEN — no extra secrets required"
+              ;;
+            cloudflare-pages)
+              [[ -z "${cloudflare_api_token:-}" ]] && MISSING+=("cloudflare_api_token")
+              ;;
+            netlify)
+              [[ -z "${netlify_auth_token:-}" ]] && MISSING+=("netlify_auth_token")
+              ;;
+            vercel)
+              [[ -z "${vercel_token:-}" ]] && MISSING+=("vercel_token")
+              ;;
+          esac
+          if [[ ${#MISSING[@]} -gt 0 ]]; then
+            echo "❌ Web host=${{ inputs.host }} requires these secrets, but they are MISSING:"
+            printf '   - %s\n' "${MISSING[@]}"
+            echo ""
+            echo "Set them in your repo's Settings → Secrets and variables → Actions:"
+            for s in "${MISSING[@]}"; do echo "   gh secret set $s --repo \${{ github.repository }}"; done
+            exit 1
+          fi
+          echo "✅ Web ${{ inputs.host }} secrets present"
+
   stage-1-preview:
     name: Stage 1 — Preview
+    needs: [validate-secrets]
     if: contains(fromJSON('["preview","staging","production"]'), inputs.starting_rung)
     runs-on: ubuntu-latest
     environment: web-${{ inputs.host }}-preview
