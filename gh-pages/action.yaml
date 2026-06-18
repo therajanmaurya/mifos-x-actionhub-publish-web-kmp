@@ -1,18 +1,27 @@
-# Sub-action: gh-pages — Deploy to GitHub Pages branch
-# Part of openMF/mifos-x-actionhub-publish-web-kmp@v2.0.0
+# Sub-action: gh-pages — Deploy to GitHub Pages via Pages deploy API
+# Part of openMF/mifos-x-actionhub-publish-web-kmp@v2.0.7
 #
-# Routes to gh-pages-preview / gh-pages-staging / gh-pages based on `target_stage`.
-# Lifted from openMF/mifos-x-actionhub-web-publish-kmp@v2.0.0 root action +
-# kmp-project-template/.github/workflows/release-web.yml.
+# Uses actions/upload-pages-artifact + actions/deploy-pages — deploys through the
+# Pages REST API instead of pushing to a gh-pages branch. This avoids any
+# repository ruleset on `~ALL` branches blocking the deploy commit, and is the
+# modern GitHub-recommended path when the repo's Pages build_type is `workflow`.
+#
+# Repo prerequisite (one-time): Settings → Pages → Build and deployment →
+# Source = "GitHub Actions".
+#
+# target_stage drives the Pages environment name only — preview / staging /
+# production all resolve to the single Pages URL of the repo
+# (https://<owner>.github.io/<repo>/). Per-environment URL separation is no
+# longer offered by GitHub Pages once `build_type: workflow` is selected.
 name: 'KMP Publish Web — GitHub Pages'
-description: 'Deploy Kotlin/JS distribution to gh-pages branch (preview/staging/production).'
+description: 'Deploy Kotlin/JS distribution to GitHub Pages via the Pages deploy API (preview/staging/production).'
 author: 'Mifos Initiative'
 branding: { icon: 'send', color: 'gray' }
 
 inputs:
-  web_package_name: { required: true, description: 'Web module name' }
+  web_package_name: { required: true,  description: 'Web module name' }
   target_stage:     { required: false, default: 'production', description: 'preview | staging | production' }
-  java-version:     { required: false, default: '17', description: 'JDK version' }
+  java-version:     { required: false, default: '17',         description: 'JDK version' }
 
 runs:
   using: 'composite'
@@ -25,22 +34,19 @@ runs:
       env: { PKG: '${{ inputs.web_package_name }}' }
       run: ./gradlew ":$PKG:jsBrowserDistribution"
 
-    - name: Resolve target branch
-      id: branch
+    - name: Validate target_stage
       shell: bash
       env: { TARGET_STAGE: '${{ inputs.target_stage }}' }
       run: |
         case "$TARGET_STAGE" in
-          preview)    echo "name=gh-pages-preview" >> "$GITHUB_OUTPUT" ;;
-          staging)    echo "name=gh-pages-staging" >> "$GITHUB_OUTPUT" ;;
-          production) echo "name=gh-pages"         >> "$GITHUB_OUTPUT" ;;
+          preview|staging|production) ;;
           *) echo "::error::Invalid target_stage: $TARGET_STAGE"; exit 2 ;;
         esac
 
-    - name: Deploy to gh-pages branch
-      uses: peaceiris/actions-gh-pages@v4
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        github_token:    ${{ github.token }}
-        publish_dir:     ${{ inputs.web_package_name }}/build/dist/js/productionExecutable
-        publish_branch:  ${{ steps.branch.outputs.name }}
-        force_orphan:    ${{ inputs.target_stage == 'production' }}
+        path: ${{ inputs.web_package_name }}/build/dist/js/productionExecutable
+
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v4
