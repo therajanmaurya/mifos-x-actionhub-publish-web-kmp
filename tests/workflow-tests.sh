@@ -174,13 +174,15 @@ for STAGE in [\"stage-1-preview\",\"stage-2-staging\",\"stage-3-production\"]:
     assert refs == set([\"gh-pages\",\"cloudflare-pages\",\"netlify\",\"vercel\"]), STAGE + \" refs: \" + str(refs)
 assert total == 12, \"expected 12 total, got \" + str(total)
 '"
-run_test "T20: All references pinned to @v2.0.0 (composite-action stable tag)" "py '
+run_test "T20: All composite-action refs use consistent tags (Tier 10 T41 catches v2.0.0 freeze when actions change)" "py '
 import yaml
 d = yaml.safe_load(open(\".github/workflows/release.yaml\"))
+tags = set()
 for STAGE in [\"stage-1-preview\",\"stage-2-staging\",\"stage-3-production\"]:
     for s in d[\"jobs\"][STAGE][\"steps\"]:
         if isinstance(s,dict) and \"publish-web-kmp/\" in str(s.get(\"uses\",\"\")):
-            assert s[\"uses\"].endswith(\"@v2.0.0\"), \"non-canonical ref: \" + s[\"uses\"]
+            tags.add(s[\"uses\"].split(\"@\")[-1])
+assert len(tags) <= 1, \"refs use INCONSISTENT tags: \" + str(sorted(tags))
 '"
 echo
 
@@ -328,6 +330,25 @@ for action_yaml in glob.glob(\"**/action.yaml\", recursive=True):
         if isinstance(step, dict) and \"setup-ruby\" in str(step.get(\"uses\", \"\")):
             w = step.get(\"with\", {})
             assert w.get(\"bundler-cache\") in [True, \"true\"], action_yaml + \" — setup-ruby missing bundler-cache:true\"
+'"
+echo
+
+# ── Tier 10: composite-action self-pin consistency (preventive) ──────────────
+#
+# Same architectural anti-pattern catcher as publish-android-kmp T46 +
+# publish-apple-kmp T50. This repo doesn't have the bug today (composite actions
+# unchanged since v2.0.0) but the test prevents it from being introduced.
+echo "── Tier 10: composite-action self-pin consistency (preventive) ──"
+run_test "T41: all composite-action 'uses:' refs in release.yaml use consistent tags + no v2.0.0 freeze when action.yaml changes" "python3 -c '
+import re, sys
+with open(\".github/workflows/release.yaml\") as f:
+    content = f.read()
+pat = re.compile(r\"uses:\\s+therajanmaurya/mifos-x-actionhub-publish-web-kmp/[^/]+@(v[0-9.]+)\")
+tags = set(pat.findall(content))
+if len(tags) > 1:
+    print(\"FAIL — composite-action refs use INCONSISTENT tags: \" + str(sorted(tags)))
+    sys.exit(1)
+print(\"OK — composite-action refs consistent at \" + (list(tags)[0] if tags else \"(no refs)\"))
 '"
 echo
 
