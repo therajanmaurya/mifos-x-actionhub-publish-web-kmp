@@ -80,7 +80,7 @@ jobs:
   # Per-host static-uses pattern (since v2.0.6):
   # GitHub Actions does NOT permit expression interpolation inside `uses:` — the
   # value must resolve to a literal at workflow parse time. The previous
-  # `uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/${{ inputs.host }}@v2.0.0`
+  # `uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/${{ inputs.host }}@v2.0.7`
   # form was rejected by the parser with:
   #   "Unrecognized named-value: 'inputs'. Located at position 1
   #    within expression: inputs.host"
@@ -100,28 +100,28 @@ jobs:
 
       - name: Deploy to preview (gh-pages)
         if: inputs.host == 'gh-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/gh-pages@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/gh-pages@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     preview
 
       - name: Deploy to preview (cloudflare-pages)
         if: inputs.host == 'cloudflare-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     preview
 
       - name: Deploy to preview (netlify)
         if: inputs.host == 'netlify'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/netlify@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/netlify@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     preview
 
       - name: Deploy to preview (vercel)
         if: inputs.host == 'vercel'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/vercel@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/vercel@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     preview
@@ -138,28 +138,28 @@ jobs:
 
       - name: Deploy to staging (gh-pages)
         if: inputs.host == 'gh-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/gh-pages@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/gh-pages@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     staging
 
       - name: Deploy to staging (cloudflare-pages)
         if: inputs.host == 'cloudflare-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     staging
 
       - name: Deploy to staging (netlify)
         if: inputs.host == 'netlify'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/netlify@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/netlify@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     staging
 
       - name: Deploy to staging (vercel)
         if: inputs.host == 'vercel'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/vercel@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/vercel@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     staging
@@ -176,28 +176,28 @@ jobs:
 
       - name: Deploy to production (gh-pages)
         if: inputs.host == 'gh-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/gh-pages@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/gh-pages@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     production
 
       - name: Deploy to production (cloudflare-pages)
         if: inputs.host == 'cloudflare-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     production
 
       - name: Deploy to production (netlify)
         if: inputs.host == 'netlify'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/netlify@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/netlify@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     production
 
       - name: Deploy to production (vercel)
         if: inputs.host == 'vercel'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/vercel@v2.0.0
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/vercel@v2.0.7
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     production
