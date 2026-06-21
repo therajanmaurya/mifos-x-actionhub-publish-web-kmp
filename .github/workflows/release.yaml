@@ -32,6 +32,8 @@ on:
       cloudflare_api_token: { required: false }
       netlify_auth_token:   { required: false }
       vercel_token:         { required: false }
+      vercel_org_id:        { required: false }   # required by vercel/action.yaml composite
+      vercel_project_id:    { required: false }   # required by vercel/action.yaml composite
 
 concurrency:
   group: release-web-${{ inputs.host }}
@@ -125,6 +127,9 @@ jobs:
         with:
           web_package_name: ${{ inputs.web_package_name }}
           target_stage:     preview
+          vercel_token:      ${{ secrets.vercel_token }}
+          vercel_org_id:     ${{ secrets.vercel_org_id }}
+          vercel_project_id: ${{ secrets.vercel_project_id }}
 
   stage-2-staging:
     name: Stage 2 — Staging
