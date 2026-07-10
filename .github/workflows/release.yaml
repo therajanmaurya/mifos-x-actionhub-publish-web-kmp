@@ -42,6 +42,8 @@ on:
       cloudflare_api_token: { required: false }
       netlify_auth_token:   { required: false }
       vercel_token:         { required: false }
+      vercel_org_id:        { required: false }
+      vercel_project_id:    { required: false }
 
 concurrency:
   group: release-web-${{ inputs.host }}
