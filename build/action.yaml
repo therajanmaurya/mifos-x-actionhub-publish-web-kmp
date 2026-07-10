@@ -8,6 +8,7 @@ branding: { icon: 'package', color: 'blue' }
 
 inputs:
   web_package_name: { required: true,  description: 'Web module name (e.g. cmp-web)' }
+  flavor:           { required: false, default: '', description: 'Product flavor → -PkmpFlavor (empty = DSL default / prod baseline)' }
   java-version:     { required: false, default: '17', description: 'JDK version' }
 
 outputs:
@@ -25,8 +26,11 @@ runs:
 
     - name: Build Kotlin/JS distribution
       shell: bash
-      env: { PKG: '${{ inputs.web_package_name }}' }
-      run: ./gradlew ":$PKG:jsBrowserDistribution"
+      env: { PKG: '${{ inputs.web_package_name }}', FLAVOR: '${{ inputs.flavor }}' }
+      run: |
+        FLAVOR_ARG=""
+        [ -n "$FLAVOR" ] && FLAVOR_ARG="-PkmpFlavor=$FLAVOR"
+        ./gradlew ":$PKG:jsBrowserDistribution" $FLAVOR_ARG
 
     - name: Locate dist dir
       id: locate

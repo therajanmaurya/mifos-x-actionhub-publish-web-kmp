@@ -20,6 +20,7 @@ branding: { icon: 'send', color: 'gray' }
 
 inputs:
   web_package_name: { required: true,  description: 'Web module name' }
+  flavor:           { required: false, default: '', description: 'Product flavor → -PkmpFlavor (empty = DSL default / prod baseline)' }
   target_stage:     { required: false, default: 'production', description: 'preview | staging | production' }
   java-version:     { required: false, default: '17',         description: 'JDK version' }
 
@@ -31,8 +32,11 @@ runs:
 
     - name: Build distribution
       shell: bash
-      env: { PKG: '${{ inputs.web_package_name }}' }
-      run: ./gradlew ":$PKG:jsBrowserDistribution"
+      env: { PKG: '${{ inputs.web_package_name }}', FLAVOR: '${{ inputs.flavor }}' }
+      run: |
+        FLAVOR_ARG=""
+        [ -n "$FLAVOR" ] && FLAVOR_ARG="-PkmpFlavor=$FLAVOR"
+        ./gradlew ":$PKG:jsBrowserDistribution" $FLAVOR_ARG
 
     - name: Validate target_stage
       shell: bash
