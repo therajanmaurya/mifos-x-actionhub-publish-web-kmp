@@ -118,6 +118,26 @@ jobs:
           flavor:           ${{ inputs.flavor || 'prod' }}
           target_stage:     preview
 
+      - name: Zip web distribution
+        if: ${{ always() && inputs.host == 'gh-pages' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIST=$(find "${{ inputs.web_package_name }}/build/dist" -type d -name productionExecutable 2>/dev/null | head -1 || true)
+          if [[ -n "$DIST" && -d "$DIST" ]]; then
+            ( cd "$DIST" && zip -r "$GITHUB_WORKSPACE/web-dist.zip" . )
+            echo "🗜  Zipped web dist from $DIST"
+          else
+            echo "::warning::web dist dir not found under ${{ inputs.web_package_name }}/build/dist"
+          fi
+      - name: Upload web dist as release asset
+        if: ${{ always() && inputs.host == 'gh-pages' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-asset-web
+          path: web-dist.zip
+          if-no-files-found: warn
+
       - name: Deploy to preview (cloudflare-pages)
         if: inputs.host == 'cloudflare-pages'
         uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.9
