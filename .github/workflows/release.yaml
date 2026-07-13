@@ -101,7 +101,7 @@ jobs:
   # ---------------------------------------------------------------------------
 
   stage-1-preview:
-    name: Preview
+    name: Stage 1 · Preview
     needs: [validate-secrets]
     if: contains(fromJSON('["preview","staging","production"]'), inputs.starting_rung)
     runs-on: ubuntu-latest
@@ -160,7 +160,7 @@ jobs:
           target_stage:     preview
 
   stage-2-staging:
-    name: Staging
+    name: Stage 2 · Staging
     needs: [stage-1-preview]
     if: contains(fromJSON('["staging","production"]'), inputs.starting_rung) && !cancelled() && !failure()
     runs-on: ubuntu-latest
@@ -199,7 +199,7 @@ jobs:
           target_stage:     staging
 
   stage-3-production:
-    name: Production
+    name: Stage 3 · Production
     needs: [stage-2-staging]
     if: inputs.starting_rung == 'production' && !cancelled() && !failure()
     runs-on: ubuntu-latest
