@@ -18,10 +18,10 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-java@v4
+    - uses: actions/setup-java@v5
       with: { distribution: zulu, java-version: '${{ inputs.java-version }}' }
 
-    - uses: gradle/actions/setup-gradle@v3
+    - uses: gradle/actions/setup-gradle@v5
 
     - name: Build Kotlin/JS distribution
       shell: bash
@@ -38,5 +38,5 @@ runs:
         echo "dist_dir=$DIST" >> "$GITHUB_OUTPUT"
         echo "✅ Built $(ls -1 "$DIST" | wc -l) files at $DIST"
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with: { name: web-dist, path: '${{ steps.locate.outputs.dist_dir }}' }

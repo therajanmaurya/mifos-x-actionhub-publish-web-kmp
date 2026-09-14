@@ -98,7 +98,7 @@ jobs:
     environment: web-${{ inputs.host }}-preview
     permissions: { contents: write, pages: write, id-token: write }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Deploy to preview (gh-pages)
         if: inputs.host == 'gh-pages'
@@ -139,7 +139,7 @@ jobs:
     environment: web-${{ inputs.host }}-staging
     permissions: { contents: write, pages: write, id-token: write }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Deploy to staging (gh-pages)
         if: inputs.host == 'gh-pages'
@@ -177,7 +177,7 @@ jobs:
     environment: web-${{ inputs.host }}-production
     permissions: { contents: write, pages: write, id-token: write }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Deploy to production (gh-pages)
         if: inputs.host == 'gh-pages'
