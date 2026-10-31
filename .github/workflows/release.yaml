@@ -45,7 +45,7 @@ jobs:
   # cloudflare-pages / netlify / vercel each need exactly one host-specific token.
   validate-secrets:
     name: Preflight · Validate required secrets
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Check web secrets per host
         env:
@@ -94,7 +94,7 @@ jobs:
     name: Stage 1 — Preview
     needs: [validate-secrets]
     if: contains(fromJSON('["preview","staging","production"]'), inputs.starting_rung)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment: web-${{ inputs.host }}-preview
     permissions: { contents: write, pages: write, id-token: write }
     steps:
@@ -135,7 +135,7 @@ jobs:
     name: Stage 2 — Staging
     needs: [stage-1-preview]
     if: contains(fromJSON('["staging","production"]'), inputs.starting_rung) && !cancelled() && !failure()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment: web-${{ inputs.host }}-staging
     permissions: { contents: write, pages: write, id-token: write }
     steps:
@@ -173,7 +173,7 @@ jobs:
     name: Stage 3 — Production (2 reviewers + wait timer)
     needs: [stage-2-staging]
     if: inputs.starting_rung == 'production' && !cancelled() && !failure()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment: web-${{ inputs.host }}-production
     permissions: { contents: write, pages: write, id-token: write }
     steps:
