@@ -14,6 +14,7 @@ inputs:
   web_package_name:      { required: true,  description: 'Web module name (e.g. cmp-web)' }
   target_stage:          { required: false, default: 'production', description: 'preview | staging | production' }
   java-version:          { required: false, default: '17', description: 'JDK version' }
+  flavor:                { required: false, default: '', description: 'KMP flavor (-PkmpFlavor); empty = module default' }
   cloudflare_api_token:  { required: true,  description: 'Cloudflare API token with Account · Cloudflare Pages · Edit' }
   cloudflare_account_id: { required: true,  description: 'Cloudflare account ID' }
   project_name:          { required: false, default: '', description: 'Pages project name (default: the repository name)' }
@@ -41,8 +42,8 @@ runs:
 
     - name: Build distribution
       shell: bash
-      env: { PKG: '${{ inputs.web_package_name }}' }
-      run: ./gradlew ":$PKG:jsBrowserDistribution"
+      env: { PKG: '${{ inputs.web_package_name }}', FLAVOR: '${{ inputs.flavor }}' }
+      run: ./gradlew ":$PKG:jsBrowserDistribution" ${FLAVOR:+"-PkmpFlavor=$FLAVOR"}
 
     - name: Resolve project + branch
       id: target

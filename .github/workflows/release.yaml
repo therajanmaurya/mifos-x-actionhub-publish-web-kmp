@@ -22,6 +22,16 @@ on:
         description: 'Gradle module (e.g. cmp-web)'
         required: true
         type: string
+      flavor:
+        description: 'KMP flavor for the web build (-PkmpFlavor). Empty = the module default.'
+        required: false
+        type: string
+        default: ''
+      build_type:
+        description: 'Accepted for the orchestrator contract; the web production bundle has no build type.'
+        required: false
+        type: string
+        default: ''
       cloudflare_project_name:
         description: 'Cloudflare Pages project (host=cloudflare-pages). Empty = the repository name.'
         required: false
@@ -121,6 +131,7 @@ jobs:
         with:
           web_package_name:      ${{ inputs.web_package_name }}
           target_stage:          preview
+          flavor:                ${{ inputs.flavor }}
           cloudflare_api_token:  ${{ secrets.cloudflare_api_token }}
           cloudflare_account_id: ${{ secrets.cloudflare_account_id }}
           project_name:          ${{ inputs.cloudflare_project_name }}
@@ -165,6 +176,7 @@ jobs:
         with:
           web_package_name:      ${{ inputs.web_package_name }}
           target_stage:          staging
+          flavor:                ${{ inputs.flavor }}
           cloudflare_api_token:  ${{ secrets.cloudflare_api_token }}
           cloudflare_account_id: ${{ secrets.cloudflare_account_id }}
           project_name:          ${{ inputs.cloudflare_project_name }}
@@ -206,6 +218,7 @@ jobs:
         with:
           web_package_name:      ${{ inputs.web_package_name }}
           target_stage:          production
+          flavor:                ${{ inputs.flavor }}
           cloudflare_api_token:  ${{ secrets.cloudflare_api_token }}
           cloudflare_account_id: ${{ secrets.cloudflare_account_id }}
           project_name:          ${{ inputs.cloudflare_project_name }}
