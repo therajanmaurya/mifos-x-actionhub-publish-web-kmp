@@ -1,33 +1,68 @@
-# Sub-action: cloudflare-pages — Deploy via Wrangler
-# Lifted from openMF/mifos-x-actionhub-web-publish-kmp@v2.0.0 cloudflare-pages/
+# Sub-action: cloudflare-pages — build the Kotlin/JS distribution and deploy it via Wrangler.
+#
+# Same build + stage contract as gh-pages/action.yaml (the ladder calls every host the same way),
+# plus the Cloudflare identity. Stages map to Pages branches: production → the project's production
+# branch (<project>.pages.dev); preview / staging → branch deployments (<stage>.<project>.pages.dev).
+#
+# A `_worker.js` / `_headers` in the distribution is deployed with it (Pages advanced mode).
 name: 'KMP Publish Web — Cloudflare Pages'
-description: 'Deploy built web bundle to Cloudflare Pages via Wrangler.'
+description: 'Build the Kotlin/JS distribution and deploy it to Cloudflare Pages via Wrangler.'
 author: 'Mifos Initiative'
 branding: { icon: 'cloud', color: 'orange' }
 
 inputs:
-  dist_dir:                   { required: true,  description: 'Path to the built web bundle' }
-  cloudflare_pages_api_token: { required: true,  description: 'Cloudflare API token with Pages:Edit' }
-  cloudflare_account_id:      { required: true,  description: 'Cloudflare account ID' }
-  project_name:               { required: true,  description: 'Cloudflare Pages project name' }
-  branch:                     { required: false, default: 'main', description: 'Deployment branch label' }
+  web_package_name:      { required: true,  description: 'Web module name (e.g. cmp-web)' }
+  target_stage:          { required: false, default: 'production', description: 'preview | staging | production' }
+  java-version:          { required: false, default: '17', description: 'JDK version' }
+  cloudflare_api_token:  { required: true,  description: 'Cloudflare API token with Account · Cloudflare Pages · Edit' }
+  cloudflare_account_id: { required: true,  description: 'Cloudflare account ID' }
+  project_name:          { required: false, default: '', description: 'Pages project name (default: the repository name)' }
+  production_branch:     { required: false, default: 'main', description: "The Pages project's production branch" }
 
 runs:
   using: 'composite'
   steps:
-    - name: Verify dist dir exists
+    - name: Validate inputs
       shell: bash
-      env: { DIST_DIR: '${{ inputs.dist_dir }}' }
+      env:
+        TARGET_STAGE: ${{ inputs.target_stage }}
+        TOKEN:        ${{ inputs.cloudflare_api_token }}
+        ACCOUNT:      ${{ inputs.cloudflare_account_id }}
       run: |
-        if [ ! -d "$DIST_DIR" ]; then
-          echo "ERROR: dist_dir not found: $DIST_DIR" >&2
-          exit 1
-        fi
-        echo "Dist dir contents: $(ls -1 "$DIST_DIR" | wc -l) entries."
+        case "$TARGET_STAGE" in
+          preview|staging|production) ;;
+          *) echo "::error::Invalid target_stage: $TARGET_STAGE"; exit 2 ;;
+        esac
+        [ -n "$TOKEN" ]   || { echo "::error::cloudflare_api_token is empty"; exit 2; }
+        [ -n "$ACCOUNT" ] || { echo "::error::cloudflare_account_id is empty"; exit 2; }
+
+    - uses: actions/setup-java@v4
+      with: { distribution: zulu, java-version: '${{ inputs.java-version }}' }
+
+    - name: Build distribution
+      shell: bash
+      env: { PKG: '${{ inputs.web_package_name }}' }
+      run: ./gradlew ":$PKG:jsBrowserDistribution"
+
+    - name: Resolve project + branch
+      id: target
+      shell: bash
+      env:
+        PROJECT:      ${{ inputs.project_name }}
+        REPO:         ${{ github.event.repository.name }}
+        TARGET_STAGE: ${{ inputs.target_stage }}
+        PROD_BRANCH:  ${{ inputs.production_branch }}
+      run: |
+        echo "project=${PROJECT:-$REPO}" >> "$GITHUB_OUTPUT"
+        if [ "$TARGET_STAGE" = production ]; then echo "branch=$PROD_BRANCH" >> "$GITHUB_OUTPUT"
+        else echo "branch=$TARGET_STAGE" >> "$GITHUB_OUTPUT"; fi
 
     - name: Deploy via Wrangler
       uses: cloudflare/wrangler-action@v3
       with:
-        apiToken:  ${{ inputs.cloudflare_pages_api_token }}
+        apiToken:  ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}
-        command: pages deploy ${{ inputs.dist_dir }} --project-name=${{ inputs.project_name }} --branch=${{ inputs.branch }}
+        command: >-
+          pages deploy ${{ inputs.web_package_name }}/build/dist/js/productionExecutable
+          --project-name=${{ steps.target.outputs.project }}
+          --branch=${{ steps.target.outputs.branch }}

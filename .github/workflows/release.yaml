@@ -22,6 +22,11 @@ on:
         description: 'Gradle module (e.g. cmp-web)'
         required: true
         type: string
+      cloudflare_project_name:
+        description: 'Cloudflare Pages project (host=cloudflare-pages). Empty = the repository name.'
+        required: false
+        type: string
+        default: ''
       starting_rung:
         description: "Resume from: preview | staging | production"
         required: false
@@ -30,6 +35,7 @@ on:
 
     secrets:
       cloudflare_api_token: { required: false }
+      cloudflare_account_id: { required: false }
       netlify_auth_token:   { required: false }
       vercel_token:         { required: false }
       vercel_org_id:        { required: false }   # required by vercel/action.yaml composite
@@ -42,7 +48,7 @@ concurrency:
 jobs:
   # Preflight: validate required secrets per host — fail-fast in ~5s instead of
   # dying deep in the deploy step. gh-pages needs nothing (uses GITHUB_TOKEN);
-  # cloudflare-pages / netlify / vercel each need exactly one host-specific token.
+  # cloudflare-pages needs its API token + account ID; netlify / vercel need one token each.
   validate-secrets:
     name: Preflight · Validate required secrets
     runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-26.04' }}
@@ -50,6 +56,7 @@ jobs:
       - name: Check web secrets per host
         env:
           cloudflare_api_token: ${{ secrets.cloudflare_api_token }}
+          cloudflare_account_id: ${{ secrets.cloudflare_account_id }}
           netlify_auth_token:   ${{ secrets.netlify_auth_token }}
           vercel_token:         ${{ secrets.vercel_token }}
         run: |
@@ -60,6 +67,7 @@ jobs:
               ;;
             cloudflare-pages)
               [[ -z "${cloudflare_api_token:-}" ]] && MISSING+=("cloudflare_api_token")
+              [[ -z "${cloudflare_account_id:-}" ]] && MISSING+=("cloudflare_account_id")
               ;;
             netlify)
               [[ -z "${netlify_auth_token:-}" ]] && MISSING+=("netlify_auth_token")
@@ -109,10 +117,13 @@ jobs:
 
       - name: Deploy to preview (cloudflare-pages)
         if: inputs.host == 'cloudflare-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.7
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.17
         with:
-          web_package_name: ${{ inputs.web_package_name }}
-          target_stage:     preview
+          web_package_name:      ${{ inputs.web_package_name }}
+          target_stage:          preview
+          cloudflare_api_token:  ${{ secrets.cloudflare_api_token }}
+          cloudflare_account_id: ${{ secrets.cloudflare_account_id }}
+          project_name:          ${{ inputs.cloudflare_project_name }}
 
       - name: Deploy to preview (netlify)
         if: inputs.host == 'netlify'
@@ -150,10 +161,13 @@ jobs:
 
       - name: Deploy to staging (cloudflare-pages)
         if: inputs.host == 'cloudflare-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.7
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.17
         with:
-          web_package_name: ${{ inputs.web_package_name }}
-          target_stage:     staging
+          web_package_name:      ${{ inputs.web_package_name }}
+          target_stage:          staging
+          cloudflare_api_token:  ${{ secrets.cloudflare_api_token }}
+          cloudflare_account_id: ${{ secrets.cloudflare_account_id }}
+          project_name:          ${{ inputs.cloudflare_project_name }}
 
       - name: Deploy to staging (netlify)
         if: inputs.host == 'netlify'
@@ -188,10 +202,13 @@ jobs:
 
       - name: Deploy to production (cloudflare-pages)
         if: inputs.host == 'cloudflare-pages'
-        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.7
+        uses: therajanmaurya/mifos-x-actionhub-publish-web-kmp/cloudflare-pages@v2.0.17
         with:
-          web_package_name: ${{ inputs.web_package_name }}
-          target_stage:     production
+          web_package_name:      ${{ inputs.web_package_name }}
+          target_stage:          production
+          cloudflare_api_token:  ${{ secrets.cloudflare_api_token }}
+          cloudflare_account_id: ${{ secrets.cloudflare_account_id }}
+          project_name:          ${{ inputs.cloudflare_project_name }}
 
       - name: Deploy to production (netlify)
         if: inputs.host == 'netlify'

@@ -61,7 +61,7 @@ After merging:
 | Host | Secrets required |
 |---|---|
 | `gh-pages` | (none — uses GITHUB_TOKEN) |
-| `cloudflare-pages` | `cloudflare_api_token` |
+| `cloudflare-pages` | `cloudflare_api_token`, `cloudflare_account_id` (+ optional input `cloudflare_project_name`, default = repo name) |
 | `netlify` | `netlify_auth_token` |
 | `vercel` | `vercel_token` |
 
