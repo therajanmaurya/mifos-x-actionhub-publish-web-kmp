@@ -95,11 +95,11 @@ t = d[\"on\" if \"on\" in d else True][\"workflow_call\"][\"inputs\"][\"web_pack
 assert t.get(\"required\") == True
 assert t.get(\"type\") == \"string\"
 '"
-run_test "T11: workflow_call secrets = (cloudflare_api_token, netlify_auth_token, vercel_token)" "py '
+run_test "T11: workflow_call secrets = (cloudflare_api_token, cloudflare_account_id, netlify_auth_token, vercel_token, vercel_org_id, vercel_project_id)" "py '
 import yaml
 d = yaml.safe_load(open(\".github/workflows/release.yaml\"))
 got = set(d[\"on\" if \"on\" in d else True][\"workflow_call\"][\"secrets\"].keys())
-exp = set([\"cloudflare_api_token\",\"netlify_auth_token\",\"vercel_token\"])
+exp = set([\"cloudflare_api_token\",\"cloudflare_account_id\",\"netlify_auth_token\",\"vercel_token\",\"vercel_org_id\",\"vercel_project_id\"])
 assert got == exp, \"diff: \" + str(got.symmetric_difference(exp))
 '"
 run_test "T12: all workflow_call secrets are optional (required:false)" "py '
@@ -215,18 +215,18 @@ echo
 #            ignore them. This is a pre-existing interface contract gap — should be
 #            addressed in a follow-up PR (build → dist_dir → per-provider upload).
 echo "── Tier 6: Composite action input contract ──"
-run_test "T3x:  gh-pages (Family A) accepts (web_package_name, target_stage)" "py '
+run_test "T3x:  gh-pages accepts (web_package_name, target_stage, flavor)" "py '
 import yaml
 d = yaml.safe_load(open(\"gh-pages/action.yaml\"))
 declared = set(d.get(\"inputs\", {}).keys())
-required = set([\"web_package_name\",\"target_stage\"])
+required = set([\"web_package_name\",\"target_stage\",\"flavor\"])
 assert required.issubset(declared), \"gh-pages missing inputs: \" + str(required - declared)
 '"
-run_test "T3x:  cloudflare-pages (Family B) accepts (dist_dir, cloudflare_pages_api_token, cloudflare_account_id)" "py '
+run_test "T3x:  cloudflare-pages builds itself: accepts (web_package_name, target_stage, flavor, cloudflare_api_token, cloudflare_account_id)" "py '
 import yaml
 d = yaml.safe_load(open(\"cloudflare-pages/action.yaml\"))
 declared = set(d.get(\"inputs\", {}).keys())
-required = set([\"dist_dir\",\"cloudflare_pages_api_token\",\"cloudflare_account_id\"])
+required = set([\"web_package_name\",\"target_stage\",\"flavor\",\"cloudflare_api_token\",\"cloudflare_account_id\"])
 assert required.issubset(declared), \"cloudflare-pages missing inputs: \" + str(required - declared)
 '"
 run_test "T3x:  netlify (Family B) accepts (dist_dir, netlify_auth_token, netlify_site_id)" "py '
@@ -349,6 +349,20 @@ if len(tags) > 1:
     print(\"FAIL — composite-action refs use INCONSISTENT tags: \" + str(sorted(tags)))
     sys.exit(1)
 print(\"OK — composite-action refs consistent at \" + (list(tags)[0] if tags else \"(no refs)\"))
+'"
+# A host that builds the bundle must be told the flavor, or a prod release ships the module default
+# (the demo build): gh-pages built without -PkmpFlavor and published the demo app as the live site.
+run_test "T42: every gh-pages / cloudflare-pages step in release.yaml passes the flavor" "py '
+import yaml
+d = yaml.safe_load(open(\".github/workflows/release.yaml\"))
+missing = []
+for job, spec in d[\"jobs\"].items():
+    for s in spec.get(\"steps\", []):
+        u = str(s.get(\"uses\", \"\")) if isinstance(s, dict) else \"\"
+        if \"/gh-pages@\" in u or \"/cloudflare-pages@\" in u:
+            if (s.get(\"with\") or {}).get(\"flavor\") != \"\${{ inputs.flavor }}\":
+                missing.append(job + \": \" + s.get(\"name\", u))
+assert not missing, \"no flavor passed: \" + str(missing)
 '"
 echo
 
